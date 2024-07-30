@@ -1,0 +1,397 @@
+---
+title: "The Competitive Esports Physiological, Affective, and Video (CEPAV) Dataset"
+author: "Maciej Behnke"
+date: "2024-03-28"
+output:
+   html_document:  # Or another output format like pdf_document, word_document, etc.
+    toc: true
+    toc_float: true  # Optional: makes the TOC floating (html_document only)
+    toc_depth: 3     # Optional: specify the depth of headers to include in the TOC
+---
+
+This is code for and the results of analysis included in the manuscript:
+The Competitive Esports Physiological, Affective, and Video (CEPAV) Dataset
+
+Link to OSF: https://osf.io/kgdsx/
+
+Authors
+Maciej Behnke1*, Wadim Krzyżaniak1, Jan Nowak2, Szymon Kupiński2, Patrycja Chwiłkowska1, Szymon Jęśko Białek1, Maciej Kłoskowski1, Patryk Maciejewski1, Kacper Szymański1,  Daniël Lakens3, Kate Petrova4, Jeremy P. Jamieson5, James J. Gross4
+
+
+Affiliations
+1 Faculty of Psychology and Cognitive Science, Adam Mickiewicz University, Poznań, Poland
+
+2 Network Services Division, Poznan Supercomputing and Networking Center, Poznan, 61-139, Poland
+
+3 Human-Technology Interaction, Eindhoven University of Technology, Eindhoven, The Netherlands
+
+4 Department of Psychology, Stanford University, Stanford, USA
+
+5 Department of Psychology, University of Rochester, Rochester, USA
+
+corresponding author: Maciej Behnke (macbeh@amu.edu.pl)
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, max.print = Inf)
+
+options(repos = c(CRAN = "https://cran.r-project.org"))
+options(pillar.print_max = 30)
+```
+
+# 1. Loading and installing all needed packages
+
+
+```{r}
+
+
+### remove all objects from workspace
+
+rm(list=ls())
+
+### load packages 
+install.packages(c("tidyverse" 
+,"readxl"
+,"dplyr"
+,"tibble"
+,"readxl"
+,"plyr"
+, "careless"
+, "psych"
+, "data.table"
+, "rempsyc"
+, "lme4"
+,"Matrix",
+"papaja",
+"afex",
+"lavaan"))
+
+library("tidyverse")
+library("dplyr")
+library('tibble')
+library('readxl')
+library("plyr")
+library("careless")
+library("psych")
+library("data.table")
+library("rempsyc")
+library("lme4")
+library("Matrix")
+library("papaja")
+library("afex")
+library("lavaan")
+
+```
+# 2. Loading data 
+
+```{r}
+
+### set working directory
+setwd("C:/Users/macbe/OneDrive/Behnke Dropbox/Upcoming Gaming Project/OPUS 20 Stypedyści/Sci Data/ms")
+
+#import and store data from excel file
+SMI_data2 <- read_excel("C:/Users/macbe/OneDrive/Behnke Dropbox/Upcoming Gaming Project/OPUS 20 Stypedyści/Sci Data/ms/CEPAV_data.xlsx", sheet = "self_reports")
+CEPAV_data <- read_excel("C:/Users/macbe/OneDrive/Behnke Dropbox/Upcoming Gaming Project/OPUS 20 Stypedyści/Sci Data/ms/CEPAV_data.xlsx", sheet = "physio_behav")
+SNR_data <- read_excel("C:/Users/macbe/OneDrive/Behnke Dropbox/Upcoming Gaming Project/OPUS 20 Stypedyści/Sci Data/ms/SNR_working.xlsx")
+
+#View(SMI_data2)
+#View(SNR_data)
+
+```
+
+# 3. Identifing low signal quality based on SNR based on MAD > 3
+
+```{r}
+
+
+SNR_data2 <- SNR_data %>% select(SNR_S1_ECG:SNR_S1_tr, SNR_S2_ECG:SNR_S2_tr)
+outliers_SNR <- find_mad(SNR_data2, col.list = names(SNR_data2),  criteria = 3)
+outliers_SNR
+
+#View(SNR_data2)
+#416 outling signals out of 10545 
+
+```
+# 4. Calculating mean SNRs for each collumn
+
+```{r}
+mean_values <- colMeans(SNR_data2, na.rm = TRUE)
+
+# Print the mean values
+print(mean_values)
+print(min(mean_values))
+print(max(mean_values))
+
+min_value <- min(SNR_data2, na.rm = TRUE)
+print(min_value)
+
+
+
+```
+
+
+# 5. Plotting avarages across Stage 1 & 3.
+
+```{r}
+
+HR_desc  <- CEPAV_data %>% select(baseline_visit1_min1_hr:training3_revery_min2_hr, baseline_visit2_min1_hr:tournament8_recovery_min2_hr)
+HRV_desc  <- CEPAV_data %>% select(baseline_visit1_min1_hrv:training3_revery_min2_hrv, baseline_visit2_min1_hrv:tournament8_recovery_min2_hrv)
+SBP_desc  <- CEPAV_data %>% select(baseline_visit1_min1_SBP:training3_revery_min2_SBP, baseline_visit2_min1_SBP:tournament8_recovery_min2_SBP)
+DBP_desc  <- CEPAV_data %>% select(baseline_visit1_min1_DBP:training3_revery_min2_DBP, baseline_visit2_min1_DBP:tournament8_recovery_min2_DBP)
+CO_desc  <- CEPAV_data %>% select(baseline_visit1_min1_CO:training3_revery_min2_CO, baseline_visit2_min1_CO:tournament8_recovery_min2_CO)
+TPR_desc  <- CEPAV_data %>% select(baseline_visit1_min1_TPR:training3_revery_min2_TPR, baseline_visit2_min1_TPR:tournament8_recovery_min2_TPR)
+Acc_WR_desc  <- CEPAV_data %>% select(baseline_visit1_min1_wr:training3_revery_min2_wr, baseline_visit2_min1_wr:tournament8_recovery_min2_wr)
+Acc_TL_desc  <- CEPAV_data %>% select(baseline_visit1_min1_tl:training3_revery_min2_tl, baseline_visit2_min1_tl:tournament8_recovery_min2_tl)
+Acc_TR_desc  <- CEPAV_data %>% select(baseline_visit1_min1_tr:training3_revery_min2_tr, baseline_visit2_min1_tr:tournament8_recovery_min2_tr)
+
+
+Performance_desc  <- SMI_data2 %>% select(condition,
+                                          Training1_Score,
+                                          Training2_Score,
+                                          Training3_Score,
+                                         Tournament1_Score,
+                                         Tournament2_Score,
+                                         Tournament3_Score,
+                                         Tournament4_Score,
+                                         Tournament5_Score,
+                                         Tournament6_Score,
+                                         Tournament7_Score,
+                                         Tournament8_Score
+                                         )
+
+Amus_desc  <- SMI_data2 %>% select(condition,
+                                   Training1_Amusement,
+                                          Training2_Amusement,
+                                          Training3_Amusement,
+                                     Tournament1_Amusement_T2,
+                                  Tournament2_Amusement_T2,
+                                  Tournament3_Amusement_T2,
+                                  Tournament4_Amusement_T2,
+                                  Tournament5_Amusement_T2,
+                                  Tournament6_Amusement_T2,
+                                  Tournament7_Amusement_T2,
+                                  Tournament8_Amusement_T2
+)
+
+Joy_desc  <- SMI_data2 %>% select(condition,
+                                  Training1_Joy,
+                                          Training2_Joy,
+                                          Training3_Joy,
+                                  Tournament1_Joy_T2,
+                                  Tournament2_Joy_T2,
+                                  Tournament3_Joy_T2,
+                                  Tournament4_Joy_T2,
+                                  Tournament5_Joy_T2,
+                                  Tournament6_Joy_T2,
+                                  Tournament7_Joy_T2,
+                                  Tournament8_Joy_T2
+)
+
+Exc_desc  <- SMI_data2 %>% select(condition,
+                                  Training1_Excitement,
+                                          Training2_Excitement,
+                                          Training3_Excitement,
+                                  Tournament1_Excitement_T2,
+                                  Tournament2_Excitement_T2,
+                                  Tournament3_Excitement_T2,
+                                  Tournament4_Excitement_T2,
+                                  Tournament5_Excitement_T2,
+                                  Tournament6_Excitement_T2,
+                                  Tournament7_Excitement_T2,
+                                  Tournament8_Excitement_T2
+)
+
+Pride_desc  <- SMI_data2 %>% select(condition,
+                                    Training1_Pride,
+                                          Training2_Pride,
+                                          Training3_Pride,
+                                  Tournament1_Pride_T2,
+                                  Tournament2_Pride_T2,
+                                  Tournament3_Pride_T2,
+                                  Tournament4_Pride_T2,
+                                  Tournament5_Pride_T2,
+                                  Tournament6_Pride_T2,
+                                  Tournament7_Pride_T2,
+                                  Tournament8_Pride_T2
+)
+
+Stress_desc  <- SMI_data2 %>% select(condition,
+                                     Training1_Stress,
+                                          Training2_Stress,
+                                          Training3_Stress,
+                                         Tournament1_Stress_T2,
+                                         Tournament2_Stress_T2,
+                                         Tournament3_Stress_T2,
+                                         Tournament4_Stress_T2,
+                                         Tournament5_Stress_T2,
+                                         Tournament6_Stress_T2,
+                                         Tournament7_Stress_T2,
+                                         Tournament8_Stress_T2
+)
+
+Anger_desc  <- SMI_data2 %>% select(condition,
+                                    Training1_Anger,
+                                          Training2_Anger,
+                                          Training3_Anger,
+                                         Tournament1_Anger_T2,
+                                         Tournament2_Anger_T2,
+                                         Tournament3_Anger_T2,
+                                         Tournament4_Anger_T2,
+                                         Tournament5_Anger_T2,
+                                         Tournament6_Anger_T2,
+                                         Tournament7_Anger_T2,
+                                         Tournament8_Anger_T2
+)
+Fear_desc  <- SMI_data2 %>% select(condition,
+                                  Training1_Fear,
+                                          Training2_Fear,
+                                          Training3_Fear,
+                                         Tournament1_Fear_T2,
+                                         Tournament2_Fear_T2,
+                                         Tournament3_Fear_T2,
+                                         Tournament4_Fear_T2,
+                                         Tournament5_Fear_T2,
+                                         Tournament6_Fear_T2,
+                                         Tournament7_Fear_T2,
+                                         Tournament8_Fear_T2
+)
+Over_desc  <- SMI_data2 %>% select(condition,
+                                   Training1_Overwhelm,
+                                          Training2_Overwhelm,
+                                          Training3_Overwhelm,
+                                         Tournament1_Overwhelm_T2,
+                                         Tournament2_Overwhelm_T2,
+                                         Tournament3_Overwhelm_T2,
+                                         Tournament4_Overwhelm_T2,
+                                         Tournament5_Overwhelm_T2,
+                                         Tournament6_Overwhelm_T2,
+                                         Tournament7_Overwhelm_T2,
+                                         Tournament8_Overwhelm_T2
+)
+
+
+HR_means <- sapply(HR_desc, function(col) if(is.numeric(col)) mean(col, na.rm = TRUE) else NA)
+HRV_means <- sapply(HRV_desc, function(col) if(is.numeric(col)) mean(col, na.rm = TRUE) else NA)
+SBP_means <- sapply(SBP_desc, function(col) if(is.numeric(col)) mean(col, na.rm = TRUE) else NA)
+DBP_means <- sapply(DBP_desc, function(col) if(is.numeric(col)) mean(col, na.rm = TRUE) else NA)
+CO_means <- sapply(CO_desc, function(col) if(is.numeric(col)) mean(col, na.rm = TRUE) else NA)
+TPR_means <- sapply(TPR_desc, function(col) if(is.numeric(col)) mean(col, na.rm = TRUE) else NA)
+Acc_WR_means <- sapply(Acc_WR_desc, function(col) if(is.numeric(col)) mean(col, na.rm = TRUE) else NA)
+Acc_TL_means <- sapply(Acc_TL_desc, function(col) if(is.numeric(col)) mean(col, na.rm = TRUE) else NA)
+Acc_TR_means <- sapply(Acc_TR_desc, function(col) if(is.numeric(col)) mean(col, na.rm = TRUE) else NA)
+
+Perf_means <- sapply(Performance_desc[-1], function(col) if(is.numeric(col)) mean(col, na.rm = TRUE) else NA)
+
+
+Amus_means <- sapply(Amus_desc[-1], function(col) if(is.numeric(col)) mean(col, na.rm = TRUE) else NA)
+Joy_means <- sapply(Joy_desc[-1], function(col) if(is.numeric(col)) mean(col, na.rm = TRUE) else NA)
+Exc_means <- sapply(Exc_desc[-1], function(col) if(is.numeric(col)) mean(col, na.rm = TRUE) else NA)
+Pride_means <- sapply(Pride_desc[-1], function(col) if(is.numeric(col)) mean(col, na.rm = TRUE) else NA)
+Stress_means <- sapply(Stress_desc[-1], function(col) if(is.numeric(col)) mean(col, na.rm = TRUE) else NA)
+Anger_means <- sapply(Anger_desc[-1], function(col) if(is.numeric(col)) mean(col, na.rm = TRUE) else NA)
+Fear_means <- sapply(Fear_desc[-1], function(col) if(is.numeric(col)) mean(col, na.rm = TRUE) else NA)
+Over_means <- sapply(Over_desc[-1], function(col) if(is.numeric(col)) mean(col, na.rm = TRUE) else NA)
+
+
+# Define the custom x-axis labels and positions
+custom_labels <- c(1, 12, 1, 12, 23, 34,45)
+custom_positions <- c(1, 12, 24, 35, 47, 58,69)
+highlight_points <- c(8, 9, 14, 15, 20, 21, 31, 32, 37, 38, 43, 44, 49, 50, 55, 56, 61, 62, 67, 68, 73, 74)
+
+# HR Plot
+plot(HR_means, main = "HR", xlab = "", ylab = "Mean Value", cex.main = 1.5, xaxt = "n")
+lines(HR_means, type = "o", col = "#1f77b4", lwd = 2)
+points(highlight_points, HR_means[highlight_points], col = "#ff7f7f", pch = 16, cex = 1.5)
+abline(v = 23.5, lty = 2, col = "red", lwd = 2)
+axis(1, at = custom_positions, labels = custom_labels)
+
+# HRV Plot
+plot(HRV_means, main = "HRV", xlab = "", ylab = "Mean Value", cex.main = 1.5, xaxt = "n")
+lines(HRV_means, type = "o", col = "#1f77b4", lwd = 2)
+points(highlight_points, HRV_means[highlight_points], col = "#ff7f7f", pch = 16, cex = 1.5)
+abline(v = 23.5, lty = 2, col = "red", lwd = 2)
+axis(1, at = custom_positions, labels = custom_labels)
+
+# SBP Plot
+plot(SBP_means, main = "SBP", xlab = "", ylab = "Mean Value", cex.main = 1.5, xaxt = "n")
+lines(SBP_means, type = "o", col = "#1f77b4", lwd = 2)
+points(highlight_points, SBP_means[highlight_points], col = "#ff7f7f", pch = 16, cex = 1.5)
+abline(v = 23.5, lty = 2, col = "red", lwd = 2)
+axis(1, at = custom_positions, labels = custom_labels)
+
+# DBP Plot
+plot(DBP_means, main = "DBP", xlab = "", ylab = "Mean Value", cex.main = 1.5, xaxt = "n")
+lines(DBP_means, type = "o", col = "#1f77b4", lwd = 2)
+points(highlight_points, DBP_means[highlight_points], col = "#ff7f7f", pch = 16, cex = 1.5)
+abline(v = 23.5, lty = 2, col = "red", lwd = 2)
+axis(1, at = custom_positions, labels = custom_labels)
+
+# CO Plot
+plot(CO_means, main = "CO", xlab = "", ylab = "Mean Value", cex.main = 1.5, xaxt = "n")
+lines(CO_means, type = "o", col = "#1f77b4", lwd = 2)
+points(highlight_points, CO_means[highlight_points], col = "#ff7f7f", pch = 16, cex = 1.5)
+abline(v = 23.5, lty = 2, col = "red", lwd = 2)
+axis(1, at = custom_positions, labels = custom_labels)
+
+# TPR Plot
+plot(TPR_means, main = "TPR", xlab = "", ylab = "Mean Value", cex.main = 1.5, xaxt = "n")
+lines(TPR_means, type = "o", col = "#1f77b4", lwd = 2)
+points(highlight_points, TPR_means[highlight_points], col = "#ff7f7f", pch = 16, cex = 1.5)
+abline(v = 23.5, lty = 2, col = "red", lwd = 2)
+axis(1, at = custom_positions, labels = custom_labels)
+
+# Accelerometer Left Knee Plot
+plot(Acc_TL_means, main = "Accelerometer Left Knee", xlab = "", ylab = "Mean Value", cex.main = 1.5, xaxt = "n")
+lines(Acc_TL_means, type = "o", col = "#1f77b4", lwd = 2)
+points(highlight_points, Acc_TL_means[highlight_points], col = "#ff7f7f", pch = 16, cex = 1.5)
+abline(v = 23.5, lty = 2, col = "red", lwd = 2)
+axis(1, at = custom_positions, labels = custom_labels)
+
+# Accelerometer Right Knee Plot
+plot(Acc_TR_means, main = "Accelerometer Right Knee", xlab = "", ylab = "Mean Value", cex.main = 1.5, xaxt = "n")
+lines(Acc_TR_means, type = "o", col = "#1f77b4", lwd = 2)
+points(highlight_points, Acc_TR_means[highlight_points], col = "#ff7f7f", pch = 16, cex = 1.5)
+abline(v = 23.5, lty = 2, col = "red", lwd = 2)
+axis(1, at = custom_positions, labels = custom_labels)
+
+# Accelerometer Right Wrist Plot
+plot(Acc_WR_means, main = "Accelerometer Right Wrist", xlab = "", ylab = "Mean Value", cex.main = 1.5, xaxt = "n")
+lines(Acc_WR_means, type = "o", col = "#1f77b4", lwd = 2)
+points(highlight_points, Acc_WR_means[highlight_points], col = "#ff7f7f", pch = 16, cex = 1.5)
+abline(v = 23.5, lty = 2, col = "red", lwd = 2)
+axis(1, at = custom_positions, labels = custom_labels)
+
+# Performance Plot
+plot(Perf_means, main = "Gaming Score", xlab = "", ylab = "Mean Value", cex.main = 1.5, xaxt = "n")
+lines(Perf_means, type = "o", col = "#1f77b4", lwd = 2)
+custom_labels3 <- c(1, 2, 3, 1, 2, 3, 4, 5, 6, 7, 8)
+axis(1, at = 1:length(custom_labels3), labels = custom_labels3)
+abline(v = 3.5, lty = 2, col = "red")
+
+
+# Affect Plot
+
+par(mar = c(5, 4, 4, 8) + 0.1)
+plot(Amus_means, type = "o", col = "purple",lwd = 2, ylim = range(c(Amus_means, Joy_means, Exc_means, Pride_means, Stress_means, Anger_means, Fear_means, Over_means)),
+     main = "Affect", xlab = "", ylab = "Mean Value", xaxt = "n", cex.main = 1.5)
+custom_labels2 <- c(1, 2, 3, 1, 2, 3, 4, 5, 6, 7, 8)
+axis(1, at = 1:length(custom_labels2), labels = custom_labels2)
+
+lines(Joy_means, type = "o", col = "blue",lwd = 2)
+lines(Exc_means, type = "o", col = "green",lwd = 2)
+lines(Pride_means, type = "o", col = "yellow",lwd = 2)
+lines(Stress_means, type = "o", col = "black",lwd = 2)
+lines(Anger_means, type = "o", col = "pink",lwd = 2)
+lines(Fear_means, type = "o", col = "gray",lwd = 2)
+lines(Over_means, type = "o", col = "red", lwd = 2)
+
+# Add a vertical line
+abline(v = 3.5, lty = 2, col = "blue")
+
+# Add the legend closer to the main graph and aligning its height
+legend("topright", inset = c(-0.3, 0), legend = c("Amusment", "Joy", "Excitement", "Pride", "Stress", "Anger", "Fear", "Overwhelm"),
+       col = c("purple", "blue", "green", "yellow", "black", "pink", "gray", "red"), lty = 1, xpd = TRUE, bty = "n")
+
+
+
+```
